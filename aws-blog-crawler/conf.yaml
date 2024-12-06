@@ -1,6 +1,6 @@
-amazon_es_host: https://search-amazon-opensearch-workshop-3hd2bquqrv4iw7mwveajax5le4.ap-northeast-2.es.amazonaws.com/
-user_id : [ID]
-password : [PASSWORD]
+amazon_es_host: https://vpc-qbank-dev-search-xvrfax53q2s47fgnd6m7opay5a.ap-northeast-2.es.amazonaws.com
+user_id : qbank
+password : Tleodlswo123$%^
 index : aws-blog
 archive_file_name : blog-articles.txt
 archive_file_name_ko : blog-articles-ko.txt

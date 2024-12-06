@@ -17,7 +17,7 @@ function parse_yaml {
 }
 
 
-eval $(parse_yaml /home/ec2-user/environment/aws-blog-crawler/conf.yaml)
+eval $(parse_yaml /Users/byungkwonc/github/cursor/aws-blog-crawler/conf.yaml)
 
 gunzip -f $archive_file_name_ko.gz
 
