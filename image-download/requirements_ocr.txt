@@ -1,0 +1,15 @@
+# OCR 텍스트 추출을 위한 Python 패키지들
+
+# PaddleOCR - 한글 인식률이 높은 OCR 엔진
+paddlepaddle>=2.5.0
+paddleocr>=2.7.0
+
+# 이미지 처리
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# GPU 가속 사용시 (선택사항)
+# paddlepaddle-gpu>=2.5.0
+
+# 추가 이미지 처리 라이브러리 (선택사항)
+Pillow>=10.0.0
