@@ -1,0 +1,28 @@
+{
+  "ocr": {
+    "use_gpu": false,
+    "language": "korean",
+    "use_textline_orientation": true,
+    "confidence_threshold_table": 0.5,
+    "confidence_threshold_text": 0.3,
+    "row_distance_threshold": 20
+  },
+  "image_processing": {
+    "clip_limit": 2.0,
+    "tile_grid_size": [8, 8],
+    "denoise_enabled": true,
+    "contrast_enhancement_enabled": true
+  },
+  "paths": {
+    "images_dir": "images",
+    "ocr_dir": "ocr",
+    "logs_dir": "logs",
+    "config_file": "config.json"
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(levelname)s - %(message)s",
+    "log_to_file": true,
+    "log_to_console": true
+  }
+}

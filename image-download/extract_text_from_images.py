@@ -14,6 +14,9 @@ import re
 from typing import List, Dict, Tuple, Optional
 import logging
 
+# 설정 관리 모듈 임포트
+from config import config_manager, AppConfig
+
 # PaddleOCR 설치 확인 및 설치 안내
 try:
     from paddleocr import PaddleOCR
@@ -25,44 +28,68 @@ except ImportError:
     print("pip install paddlepaddle-gpu paddleocr")  # GPU 사용시
     sys.exit(1)
 
-# 로깅 설정
-# logs 디렉토리 생성
-logs_dir = Path(__file__).parent / "logs"
-logs_dir.mkdir(exist_ok=True)
+# 설정 로드
+config = config_manager.get_config()
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(logs_dir / 'ocr_extraction.log', encoding='utf-8'),
-        logging.StreamHandler()
-    ]
-)
+# 로깅 설정
+def setup_logging(config: AppConfig) -> None:
+    """로깅 설정 초기화"""
+    # logs 디렉토리 생성
+    logs_dir = Path(__file__).parent / config.paths.logs_dir
+    logs_dir.mkdir(exist_ok=True)
+    
+    # 로깅 레벨 설정
+    log_level = getattr(logging, config.logging.level.upper(), logging.INFO)
+    
+    # 핸들러 설정
+    handlers = []
+    
+    if config.logging.log_to_file:
+        handlers.append(
+            logging.FileHandler(logs_dir / 'ocr_extraction.log', encoding='utf-8')
+        )
+    
+    if config.logging.log_to_console:
+        handlers.append(logging.StreamHandler())
+    
+    logging.basicConfig(
+        level=log_level,
+        format=config.logging.format,
+        handlers=handlers
+    )
+
+# 로깅 설정 적용
+setup_logging(config)
 logger = logging.getLogger(__name__)
 
 class ImageTextExtractor:
-    def __init__(self, use_gpu: bool = False):
+    def __init__(self, config: AppConfig):
         """
         이미지 텍스트 추출기 초기화
 
         Args:
-            use_gpu: GPU 사용 여부 (기본값: False)
+            config: 애플리케이션 설정
         """
+        self.config = config
+        
+        # OCR 엔진 초기화
         self.ocr = PaddleOCR(
-            use_textline_orientation=True,  # 텍스트 방향 자동 감지 (최신 버전)
-            lang='korean'                   # 한국어 모델 사용
+            use_textline_orientation=config.ocr.use_textline_orientation,
+            lang=config.ocr.language
         )
 
         # 현재 스크립트 디렉토리
         self.script_dir = Path(__file__).parent
-        self.images_dir = self.script_dir / "images"
-        self.ocr_dir = self.script_dir / "ocr"
+        self.images_dir = self.script_dir / config.paths.images_dir
+        self.ocr_dir = self.script_dir / config.paths.ocr_dir
 
         # OCR 결과 디렉토리 생성
         self.ocr_dir.mkdir(exist_ok=True)
 
         logger.info(f"이미지 디렉토리: {self.images_dir}")
         logger.info(f"OCR 결과 디렉토리: {self.ocr_dir}")
+        logger.info(f"OCR 언어: {config.ocr.language}")
+        logger.info(f"GPU 사용: {config.ocr.use_gpu}")
 
     def preprocess_image(self, image_path: Path) -> np.ndarray:
         """
@@ -82,12 +109,21 @@ class ImageTextExtractor:
         # 그레이스케일 변환
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        # 노이즈 제거
-        denoised = cv2.fastNlMeansDenoising(gray)
+        # 노이즈 제거 (설정에 따라)
+        if self.config.image_processing.denoise_enabled:
+            denoised = cv2.fastNlMeansDenoising(gray)
+        else:
+            denoised = gray
 
-        # 대비 향상
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        enhanced = clahe.apply(denoised)
+        # 대비 향상 (설정에 따라)
+        if self.config.image_processing.contrast_enhancement_enabled:
+            clahe = cv2.createCLAHE(
+                clipLimit=self.config.image_processing.clip_limit, 
+                tileGridSize=self.config.image_processing.tile_grid_size
+            )
+            enhanced = clahe.apply(denoised)
+        else:
+            enhanced = denoised
 
         return enhanced
 
@@ -123,7 +159,7 @@ class ImageTextExtractor:
         current_group = [y_coordinates[0]]
 
         for y in y_coordinates[1:]:
-            if y - current_group[-1] < 20:  # 20픽셀 이내면 같은 행
+            if y - current_group[-1] < self.config.ocr.row_distance_threshold:  # 설정된 픽셀 이내면 같은 행
                 current_group.append(y)
             else:
                 row_groups.append(current_group)
@@ -245,7 +281,7 @@ class ImageTextExtractor:
                     if item.get('text'):  # 텍스트가 있는 경우
                         text = item['text']
                         confidence = item['confidence']
-                        if confidence > 0.5:  # 신뢰도가 50% 이상인 텍스트만
+                        if confidence > self.config.ocr.confidence_threshold_table:  # 설정된 신뢰도 이상인 텍스트만
                             regular_text.append(text)
 
                 if regular_text:
@@ -258,7 +294,7 @@ class ImageTextExtractor:
                     if item.get('text'):  # 텍스트가 있는 경우
                         text = item['text']
                         confidence = item['confidence']
-                        if confidence > 0.3:  # 신뢰도가 30% 이상인 텍스트만
+                        if confidence > self.config.ocr.confidence_threshold_text:  # 설정된 신뢰도 이상인 텍스트만
                             text_lines.append(text)
 
                 if text_lines:
@@ -276,8 +312,8 @@ class ImageTextExtractor:
         """
         images 폴더의 모든 이미지에서 텍스트 추출
         """
-        # 지원하는 이미지 확장자
-        image_extensions = {'.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.tif'}
+        # 지원하는 이미지 확장자 (설정에서 가져오기)
+        image_extensions = set(self.config.supported_image_extensions)
 
         # 이미지 파일들 찾기
         image_files = []
@@ -315,20 +351,27 @@ def main():
     print("이미지 텍스트 추출기 시작...")
     print("한글 인식률이 높은 PaddleOCR 엔진을 사용합니다.")
 
-    # GPU 사용 가능 여부 확인
-    use_gpu = False
+    # GPU 사용 가능 여부 확인 및 설정 업데이트
     try:
         import paddle
         if paddle.is_compiled_with_cuda():
-            use_gpu = True
+            config.ocr.use_gpu = True
             print("GPU 가속을 사용합니다.")
         else:
+            config.ocr.use_gpu = False
             print("CPU 모드로 실행합니다.")
     except:
+        config.ocr.use_gpu = False
         print("CPU 모드로 실행합니다.")
 
+    # 설정 정보 출력
+    print(f"OCR 언어: {config.ocr.language}")
+    print(f"이미지 디렉토리: {config.paths.images_dir}")
+    print(f"결과 디렉토리: {config.paths.ocr_dir}")
+    print(f"로그 레벨: {config.logging.level}")
+
     # 텍스트 추출기 초기화
-    extractor = ImageTextExtractor(use_gpu=use_gpu)
+    extractor = ImageTextExtractor(config)
 
     # 모든 이미지 처리
     extractor.process_all_images()
