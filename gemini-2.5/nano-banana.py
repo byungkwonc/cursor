@@ -4,7 +4,7 @@ from PIL import Image
 from io import BytesIO
 
 # client = genai.Client()
-client = genai.Client(api_key="AIzaSyBCdfUf23bHy_4TXFYUw3oUevXm3SDMi5g")
+client = genai.Client(api_key="")
 
 # Base image prompt: "A photorealistic, high-resolution photograph of a busy city street in New York at night, with bright neon signs, yellow taxis, and tall skyscrapers."
 city_image = Image.open('IMG_8495.JPG')
@@ -31,7 +31,7 @@ if image_parts:
 """
 curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent" \
   -H 'Content-Type: application/json' \
-  -H 'X-goog-api-key: AIzaSyBCdfUf23bHy_4TXFYUw3oUevXm3SDMi5g' \
+  -H 'X-goog-api-key: ' \
   -X POST \
   -d '{
     "contents": [
