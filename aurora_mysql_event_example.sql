@@ -269,3 +269,4 @@ SELECT
 FROM event_execution_log
 ORDER BY executed_at DESC
 LIMIT 100;
+

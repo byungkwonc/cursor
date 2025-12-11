@@ -387,3 +387,4 @@ LIMIT 100;
 - [AWS Aurora MySQL 문서](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraMySQL.Overview.html)
 - [MySQL EVENT Scheduler 문서](https://dev.mysql.com/doc/refman/8.0/en/event-scheduler.html)
 - [RDS Parameter Groups](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithParamGroups.html)
+

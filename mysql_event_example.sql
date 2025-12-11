@@ -80,3 +80,4 @@ DROP EVENT IF EXISTS daily_cleanup;
 
 -- 현재 사용자의 권한 확인
 SHOW GRANTS FOR CURRENT_USER();
+

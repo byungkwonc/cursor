@@ -30,3 +30,4 @@ fi
 # 생성된 EVENT 목록 확인
 echo "생성된 EVENT 목록:"
 mysql -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" -h "$MYSQL_HOST" "$MYSQL_DATABASE" -e "SHOW EVENTS;"
+

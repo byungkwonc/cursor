@@ -197,3 +197,4 @@ echo "2. EVENT 생성 (aurora_mysql_event_example.sql 파일 사용)"
 echo ""
 echo "3. 생성된 EVENT 확인:"
 echo "   SHOW EVENTS;"
+
